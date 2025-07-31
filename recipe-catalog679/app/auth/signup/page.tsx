@@ -1,0 +1,103 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createClient } from "@/utils/supabase/client"
+
+export default function SignupPage() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+    setMessage("")
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem")
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (error) throw error
+
+      setMessage("Verifique seu email para confirmar a conta!")
+    } catch (error: any) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-md">
+      <Card>
+        <CardHeader>
+          <CardTitle>Criar Conta</CardTitle>
+          <CardDescription>Crie sua conta para compartilhar e favoritar receitas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {message && <p className="text-sm text-green-600">{message}</p>}
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Criando conta..." : "Criar Conta"}
+            </Button>
+          </form>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Já tem uma conta?{" "}
+              <Link href="/auth/login" className="text-primary hover:underline">
+                Entre aqui
+              </Link>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
